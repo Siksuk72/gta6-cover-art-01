@@ -1,9 +1,16 @@
-// Vice Grid Cover Studio — the entry program for gta6-cover-art-01 (Node 22,
-// standard library only). The app itself is plain static files under app/
-// (index.html plus its ES modules, the bundled Anton font and sample photos),
-// so this program only hands it in: it copies app/ and screenshots/ from
-// beside this file into the output directory and writes dossier.json there
-// with the vendored make.fun library, which is what the judge reads.
+// Vice Grid Cover Studio v2 — the entry program for gta6-cover-art-01
+// (Node 22, standard library only). The app itself is plain static files
+// under app/ (index.html plus its ES modules, the bundled Anton font and
+// sample photos), so this program only hands it in: it copies app/ and
+// screenshots/ from beside this file into the output directory and writes
+// dossier.json there with the vendored make.fun library, which is what
+// the judge reads. v2 turns the cover into a full movie poster: 8 layouts
+// (Poster Seven with a hero pop-out, Cinema Strip), 8 grades, a giant
+// striped retro-chrome title, cast role tags, press quote, billing block,
+// starburst seal, barcode and face-aware focus-point crops. The demo
+// screenshots in screenshots/ come from the ?shot= scenes in
+// app/src/shots.js (see shots.json); this program only copies app/ and
+// screenshots/ — nothing else in the worktree is part of the entry.
 //
 // Serve the app locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader, MAKEFUN_OUTPUT_DIR stands in for /output:
