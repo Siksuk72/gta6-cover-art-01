@@ -1,7 +1,8 @@
-// Vice Grid Cover Studio — editor wiring: photos, layouts, grades, caption,
-// per-panel crop and position, and PNG export in the three post sizes.
+// Vice Grid Cover Studio v2 — editor wiring: photos, layouts, grades,
+// caption, poster chrome (quote, role tags, seal), per-panel crop with a
+// face-aware focus point, and PNG export in the three poster sizes.
 // A `?shot=` query sets up a fixed scene for a screenshot (./shots.js).
-import { drawCover, defaultState, LAYOUTS, GRADES, EXPORT_SIZES, panelAt } from './cover.js';
+import { drawCover, defaultState, LAYOUTS, GRADES, EXPORT_SIZES, panelAt, focusPoint, DEFAULT_ROLES } from './cover.js';
 import { runShot } from './shots.js';
 
 const canvas = document.getElementById('cover');
@@ -10,11 +11,14 @@ const tray = document.getElementById('photoTray');
 const zoomSlider = document.getElementById('zoom');
 const zoomValue = document.getElementById('zoomValue');
 const panelLabel = document.getElementById('panelLabel');
+const roleInputs = document.getElementById('roleInputs');
+const focusBtn = document.getElementById('focusBtn');
 
 const state = defaultState();
 let photos = []; // loaded Image elements, in tray order
 let selectedPanel = 0;
 let drag = null;
+let focusMode = false;
 
 const SAMPLES = [
   { name: 'boulevard', label: 'Boulevard', file: 'samples/boulevard.jpg' },
@@ -32,8 +36,34 @@ export function loadImage(url) {
   });
 }
 
+function drawFocusMarker() {
+  if (!focusMode) return;
+  const p = focusPoint(state, selectedPanel, canvas.width, canvas.height);
+  if (!p) return;
+  const ctx = canvas.getContext('2d');
+  const r = Math.max(14, canvas.width * 0.012);
+  ctx.save();
+  ctx.strokeStyle = '#00e5ff';
+  ctx.lineWidth = Math.max(2, canvas.width * 0.002);
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(p.x - r * 1.6, p.y);
+  ctx.lineTo(p.x + r * 1.6, p.y);
+  ctx.moveTo(p.x, p.y - r * 1.6);
+  ctx.lineTo(p.x, p.y + r * 1.6);
+  ctx.stroke();
+  ctx.fillStyle = '#00e5ff';
+  ctx.beginPath();
+  ctx.arc(p.x, Math.max(2, canvas.width * 0.002), 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 function redraw() {
   drawCover(canvas, photos, state);
+  drawFocusMarker();
   updatePanelControls();
 }
 
@@ -70,9 +100,31 @@ function renderTray() {
   }
 }
 
+/** One small text field per cast role tag, kept in sync with state.roles. */
+function renderRoleInputs() {
+  roleInputs.innerHTML = '';
+  state.roles.forEach((role, i) => {
+    const label = document.createElement('label');
+    label.textContent = `Panel ${i + 1}`;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.maxLength = 16;
+    input.value = role;
+    input.setAttribute('aria-label', `Role tag for panel ${i + 1}`);
+    input.addEventListener('input', () => {
+      state.roles[i] = input.value;
+      redraw();
+    });
+    label.appendChild(input);
+    roleInputs.appendChild(label);
+  });
+}
+
 function updatePanelControls() {
-  const panel = state.panels[selectedPanel] || { photo: 0, zoom: 1, dx: 0, dy: 0 };
-  panelLabel.textContent = `Panel ${selectedPanel + 1} — photo ${photos[panel.photo] ? panel.photo + 1 : '—'}`;
+  const panel = state.panels[selectedPanel] || { photo: 0, zoom: 1, dx: 0, dy: 0, fx: 0.5, fy: 0.35 };
+  const fx = panel.fx == null ? 0.5 : panel.fx;
+  const fy = panel.fy == null ? 0.35 : panel.fy;
+  panelLabel.textContent = `Panel ${selectedPanel + 1} — photo ${photos[panel.photo] ? panel.photo + 1 : '—'} · focus ${Math.round(fx * 100)}%, ${Math.round(fy * 100)}%`;
   zoomSlider.value = String(Math.round((panel.zoom || 1) * 100));
   zoomValue.textContent = `${Math.round((panel.zoom || 1) * 100)}%`;
   document.querySelectorAll('#layoutGrid button').forEach((b) => {
@@ -87,6 +139,8 @@ function updatePanelControls() {
     b.classList.toggle('active', b.dataset.size === state.size);
     b.setAttribute('aria-pressed', String(b.dataset.size === state.size));
   });
+  focusBtn.classList.toggle('active', focusMode);
+  focusBtn.setAttribute('aria-pressed', String(focusMode));
 }
 
 /** Loads the three sample photos into the tray. */
@@ -198,7 +252,7 @@ document.querySelectorAll('#sizeTabs button').forEach((b) => {
   });
 });
 
-// --- Controls: caption ------------------------------------------------------
+// --- Controls: caption + poster chrome --------------------------------------
 const titleInput = document.getElementById('titleInput');
 const subtitleInput = document.getElementById('subtitleInput');
 const taglineInput = document.getElementById('taglineInput');
@@ -206,32 +260,48 @@ titleInput.addEventListener('input', () => { state.title = titleInput.value; red
 subtitleInput.addEventListener('input', () => { state.subtitle = subtitleInput.value; redraw(); });
 taglineInput.addEventListener('input', () => { state.tagline = taglineInput.value; redraw(); });
 document.getElementById('badgeInput').addEventListener('input', (e) => { state.badge = e.target.value; redraw(); });
+document.getElementById('quoteInput').addEventListener('input', (e) => { state.quote = e.target.value; redraw(); });
+document.getElementById('sealToggle').addEventListener('change', (e) => { state.seal = e.target.checked; redraw(); });
 document.getElementById('frameToggle').addEventListener('change', (e) => { state.frame = e.target.checked; redraw(); });
 document.getElementById('grainToggle').addEventListener('change', (e) => { state.grain = e.target.checked; redraw(); });
+renderRoleInputs();
 
-// --- Controls: selected panel ----------------------------------------------
+// --- Controls: selected panel + focus point ---------------------------------
 zoomSlider.addEventListener('input', () => {
   state.panels[selectedPanel].zoom = Number(zoomSlider.value) / 100;
   zoomValue.textContent = `${zoomSlider.value}%`;
   redraw();
 });
-document.getElementById('resetPanelBtn').addEventListener('click', () => {
-  state.panels[selectedPanel] = { photo: state.panels[selectedPanel].photo, zoom: 1, dx: 0, dy: 0 };
+focusBtn.addEventListener('click', () => {
+  focusMode = !focusMode;
   redraw();
-  setStatus(`Panel ${selectedPanel + 1} crop reset.`);
+  setStatus(focusMode
+    ? 'Focus mode: click a face in the selected panel to centre the crop on it.'
+    : 'Focus mode off — drag a panel to reposition the photo.');
+});
+document.getElementById('resetPanelBtn').addEventListener('click', () => {
+  state.panels[selectedPanel] = { photo: state.panels[selectedPanel].photo, zoom: 1, dx: 0, dy: 0, fx: 0.5, fy: 0.35 };
+  redraw();
+  setStatus(`Panel ${selectedPanel + 1} crop and focus reset.`);
 });
 document.getElementById('resetAllBtn').addEventListener('click', () => {
   const fresh = defaultState();
   state.layout = fresh.layout;
   state.grade = fresh.grade;
   state.panels = fresh.panels;
+  state.roles = [...fresh.roles];
+  state.quote = fresh.quote;
+  state.seal = fresh.seal;
   titleInput.value = fresh.title;
   subtitleInput.value = fresh.subtitle;
   taglineInput.value = fresh.tagline;
+  document.getElementById('quoteInput').value = fresh.quote;
+  document.getElementById('sealToggle').checked = fresh.seal;
   state.title = fresh.title;
   state.subtitle = fresh.subtitle;
   state.tagline = fresh.tagline;
   selectedPanel = 0;
+  renderRoleInputs();
   redraw();
   setStatus('Cover reset to the default look.');
 });
@@ -242,6 +312,8 @@ document.querySelectorAll('[data-export]').forEach((b) => {
 });
 
 // --- Canvas: click a panel to select it, drag to pan, wheel to zoom --------
+// In focus mode (or with Alt held) a click sets the panel's face-aware
+// focus point instead of starting a drag.
 function canvasPoint(e) {
   const r = canvas.getBoundingClientRect();
   return {
@@ -249,11 +321,25 @@ function canvasPoint(e) {
     y: ((e.clientY - r.top) / r.height) * canvas.height,
   };
 }
+function setFocusAt(p) {
+  const layout = LAYOUTS[state.layout];
+  const rect = layout.panels[selectedPanel];
+  if (!rect) return;
+  const panel = state.panels[selectedPanel];
+  panel.fx = Math.min(0.95, Math.max(0.05, (p.x / canvas.width - rect[0]) / rect[2]));
+  panel.fy = Math.min(0.95, Math.max(0.05, (p.y / canvas.height - rect[1]) / rect[3]));
+  redraw();
+  setStatus(`Panel ${selectedPanel + 1} focus set to ${Math.round(panel.fx * 100)}%, ${Math.round(panel.fy * 100)}% — the crop now centres there.`);
+}
 canvas.addEventListener('pointerdown', (e) => {
   const p = canvasPoint(e);
   const hit = panelAt(state, p.x, p.y, canvas.width, canvas.height);
   if (hit < 0) return;
   selectedPanel = hit;
+  if (focusMode || e.altKey) {
+    setFocusAt(p);
+    return;
+  }
   drag = { x: p.x, y: p.y, dx: state.panels[hit].dx, dy: state.panels[hit].dy, moved: false };
   canvas.setPointerCapture(e.pointerId);
   updatePanelControls();
@@ -286,6 +372,8 @@ if (shot) {
     state, canvas, titleInput, subtitleInput, taglineInput, loadSamples, loadImage,
     setPhotos(next) { photos = next; renderTray(); },
     redraw,
+    quoteInput: document.getElementById('quoteInput'),
+    renderRoleInputs,
   });
 } else {
   loadSamples();
