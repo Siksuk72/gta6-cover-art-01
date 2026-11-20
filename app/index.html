@@ -3,121 +3,62 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vice Grid Cover Studio — GTA-style movie poster covers</title>
-<link rel="stylesheet" href="./style.css">
-<link rel="preload" href="./fonts/Anton-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<title>AFTERGLOW — GTA-style cover art studio</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">
-    <span class="brandMark">VG</span>
-    <div>
-      <h1>Vice Grid Cover Studio</h1>
-      <p>Turn your photos into GTA-style movie poster covers — 8 layouts, 8 grades, giant striped title, cast role tags, press quote, billing block and seal. PNG in 3 sizes.</p>
-    </div>
-  </div>
-  <p class="privacy">Offline. Your photos never leave this machine.</p>
+<header id="topbar">
+  <span class="logo" id="logo">AFTERGLOW</span>
+  <span class="hint">cover art studio — your photo in, GTA-style poster out</span>
+  <span class="spacer"></span>
+  <label class="filelabel" for="photoFile" id="addPhotos">＋ Add photos</label>
+  <input type="file" id="photoFile" accept="image/*" multiple hidden>
+  <select id="template" title="panel layout">
+    <option value="hero">Hero + side panels</option>
+    <option value="duo">Big two</option>
+    <option value="grid">Poster grid</option>
+  </select>
+  <select id="size" title="preview size">
+    <option value="square">1080 × 1080</option>
+    <option value="portrait">1080 × 1350</option>
+    <option value="wide">1920 × 1080</option>
+  </select>
+  <button class="export-btn" id="exportSquare">PNG <b>1:1</b></button>
+  <button class="export-btn" id="exportPortrait">PNG <b>4:5</b></button>
+  <button class="export-btn" id="exportWide">PNG <b>16:9</b></button>
 </header>
-
-<main class="app">
-  <aside class="controls" aria-label="Cover controls">
-    <section class="group" id="photosGroup">
-      <h2>1 · Photos</h2>
-      <label class="fileBtn">Add your photos
-        <input id="photoInput" type="file" accept="image/*" multiple>
-      </label>
-      <div class="tray" id="photoTray" aria-label="Loaded photos"></div>
-      <p class="hint">Click a thumbnail to fill the selected panel.</p>
-      <div class="row">
-        <button id="sampleBtn" type="button">Use sample photos</button>
-        <button id="shuffleBtn" type="button">Shuffle photos</button>
+<main>
+  <div id="stage">
+    <span id="stageLabel"></span>
+    <canvas id="preview" width="1080" height="1350"></canvas>
+  </div>
+  <aside id="controls">
+    <section id="photosSection">
+      <h3>Photos</h3>
+      <div id="photoStrip"></div>
+      <p class="hint" id="photoHint">Photos stay on your machine — nothing is uploaded.<br>
+      Click a photo, then a panel, to place it. Drag on a panel to move it, wheel to zoom.</p>
+    </section>
+    <section id="captionSection">
+      <h3>Caption</h3>
+      <div class="row"><label>Title</label><input type="text" id="title" maxlength="16" value="AFTERGLOW"></div>
+      <div class="row"><label>Tagline</label><input type="text" id="tagline" maxlength="40" value="EVERY PHOTO HAS A STORY"></div>
+      <div class="switch-row">
+        <input type="checkbox" id="panelCaptions" checked>
+        <label for="panelCaptions">panel captions</label>
       </div>
     </section>
-
-    <section class="group" id="layoutGroup">
-      <h2>2 · Panel layout</h2>
-      <div class="choiceGrid" id="layoutGrid"></div>
-      <p class="hint">Poster Seven pops the middle panel out over its neighbours; Cinema Strip stacks three film strips.</p>
+    <section id="panelsSection">
+      <h3>Panels</h3>
+      <div id="panelList"></div>
     </section>
-
-    <section class="group" id="gradeGroup">
-      <h2>3 · Colour grade</h2>
-      <div class="choiceGrid" id="gradeGrid"></div>
-    </section>
-
-    <section class="group" id="exportGroup">
-      <h2>4 · Export PNG</h2>
-      <div class="exportBtns">
-        <button type="button" data-export="square">Square · 1080 × 1080</button>
-        <button type="button" data-export="portrait">Portrait · 1080 × 1350</button>
-        <button type="button" data-export="wide">Landscape · 1920 × 1080</button>
-      </div>
-      <p id="status" role="status">Pick a layout, then export.</p>
-    </section>
-
-    <section class="group" id="captionGroup">
-      <h2>5 · Poster title</h2>
-      <label>Big title
-        <input id="titleInput" type="text" maxlength="24" value="VICE CITY">
-      </label>
-      <label>Subtitle
-        <input id="subtitleInput" type="text" maxlength="40" value="Neon Shore">
-      </label>
-      <label>Tagline
-        <input id="taglineInput" type="text" maxlength="60" value="One city. One night. No brakes.">
-      </label>
-      <label>Badge
-        <input id="badgeInput" type="text" maxlength="16" value="VOL. 1">
-      </label>
-    </section>
-
-    <section class="group" id="posterGroup">
-      <h2>6 · Poster chrome</h2>
-      <label>Press quote
-        <input id="quoteInput" type="text" maxlength="70" value="&quot;NEON-SOAKED AND DANGEROUS&quot; — VICE GAZETTE">
-      </label>
-      <div class="row checks">
-        <label class="check"><input id="sealToggle" type="checkbox" checked> Gold seal</label>
-        <label class="check"><input id="frameToggle" type="checkbox" checked> Comic frame</label>
-        <label class="check"><input id="grainToggle" type="checkbox" checked> Film grain</label>
-      </div>
-      <p class="hint">The quote bar, billing block, barcode and COMING SOON strip are drawn on every poster.</p>
-      <div class="roleGrid" id="roleInputs" aria-label="Cast role tags"></div>
-    </section>
-
-    <section class="group" id="panelGroup">
-      <h2>7 · Selected panel</h2>
-      <p class="hint" id="panelLabel">Panel 1 — photo —</p>
-      <p class="hint">Click a panel on the cover, drag it to reposition the photo, scroll to zoom. In focus mode (or with Alt held) a click sets the face-aware focus point the crop centres on.</p>
-      <label>Zoom <span id="zoomValue">100%</span>
-        <input id="zoom" type="range" min="100" max="300" value="100">
-      </label>
-      <div class="row">
-        <button id="focusBtn" type="button" aria-pressed="false">Set focus point</button>
-        <button id="resetPanelBtn" type="button">Reset panel crop</button>
-      </div>
-      <div class="row">
-        <button id="resetAllBtn" type="button">Reset cover</button>
-      </div>
+    <section id="exportSection">
+      <h3>Export</h3>
+      <button class="primary" id="exportAllHint" title="buttons in the top bar">▼ Use the PNG buttons in the top bar</button>
+      <div id="exportNote"></div>
     </section>
   </aside>
-
-  <section class="preview" aria-label="Live cover preview">
-    <div class="sizeTabs" id="sizeTabs" role="group" aria-label="Preview size">
-      <button type="button" data-size="square">Square 1080×1080</button>
-      <button type="button" data-size="portrait">Portrait 1080×1350</button>
-      <button type="button" data-size="wide" class="active">Landscape 1920×1080</button>
-    </div>
-    <div class="canvasWrap">
-      <canvas id="cover" width="1920" height="1080" aria-label="Live preview of the cover"></canvas>
-    </div>
-    <p class="previewHint">Live preview — drag any panel to crop, scroll to zoom, Alt-click to set the focus point. What you see is what the PNG looks like.</p>
-  </section>
 </main>
-
-<footer class="foot">
-  <p>Original artwork made in your browser. No Rockstar Games logo, artwork or font — display lettering is Anton, licensed under the SIL Open Font License (see fonts/OFL.txt). Sample photos are AI-generated originals.</p>
-</footer>
-<script type="module" src="./src/main.js"></script>
+<script type="module" src="editor.js"></script>
 </body>
 </html>
