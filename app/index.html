@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vice Grid Cover Studio — GTA-style poster covers</title>
+<title>Vice Grid Cover Studio — GTA-style movie poster covers</title>
 <link rel="stylesheet" href="./style.css">
 <link rel="preload" href="./fonts/Anton-Regular.ttf" as="font" type="font/ttf" crossorigin>
 </head>
@@ -13,7 +13,7 @@
     <span class="brandMark">VG</span>
     <div>
       <h1>Vice Grid Cover Studio</h1>
-      <p>Turn your photos into GTA-style poster covers — 6 layouts, 6 grades, PNG in 3 sizes.</p>
+      <p>Turn your photos into GTA-style movie poster covers — 8 layouts, 8 grades, giant striped title, cast role tags, press quote, billing block and seal. PNG in 3 sizes.</p>
     </div>
   </div>
   <p class="privacy">Offline. Your photos never leave this machine.</p>
@@ -37,6 +37,7 @@
     <section class="group" id="layoutGroup">
       <h2>2 · Panel layout</h2>
       <div class="choiceGrid" id="layoutGrid"></div>
+      <p class="hint">Poster Seven pops the middle panel out over its neighbours; Cinema Strip stacks three film strips.</p>
     </section>
 
     <section class="group" id="gradeGroup">
@@ -55,7 +56,7 @@
     </section>
 
     <section class="group" id="captionGroup">
-      <h2>5 · Caption</h2>
+      <h2>5 · Poster title</h2>
       <label>Big title
         <input id="titleInput" type="text" maxlength="24" value="VICE CITY">
       </label>
@@ -66,23 +67,36 @@
         <input id="taglineInput" type="text" maxlength="60" value="One city. One night. No brakes.">
       </label>
       <label>Badge
-        <input id="badgeInput" type="text" maxlength="16" value="EST. 2026">
+        <input id="badgeInput" type="text" maxlength="16" value="VOL. 1">
+      </label>
+    </section>
+
+    <section class="group" id="posterGroup">
+      <h2>6 · Poster chrome</h2>
+      <label>Press quote
+        <input id="quoteInput" type="text" maxlength="70" value="&quot;NEON-SOAKED AND DANGEROUS&quot; — VICE GAZETTE">
       </label>
       <div class="row checks">
+        <label class="check"><input id="sealToggle" type="checkbox" checked> Gold seal</label>
         <label class="check"><input id="frameToggle" type="checkbox" checked> Comic frame</label>
         <label class="check"><input id="grainToggle" type="checkbox" checked> Film grain</label>
       </div>
+      <p class="hint">The quote bar, billing block, barcode and COMING SOON strip are drawn on every poster.</p>
+      <div class="roleGrid" id="roleInputs" aria-label="Cast role tags"></div>
     </section>
 
     <section class="group" id="panelGroup">
-      <h2>6 · Selected panel</h2>
+      <h2>7 · Selected panel</h2>
       <p class="hint" id="panelLabel">Panel 1 — photo —</p>
-      <p class="hint">Click a panel on the cover, drag it to reposition the photo, scroll to zoom.</p>
+      <p class="hint">Click a panel on the cover, drag it to reposition the photo, scroll to zoom. In focus mode (or with Alt held) a click sets the face-aware focus point the crop centres on.</p>
       <label>Zoom <span id="zoomValue">100%</span>
         <input id="zoom" type="range" min="100" max="300" value="100">
       </label>
       <div class="row">
+        <button id="focusBtn" type="button" aria-pressed="false">Set focus point</button>
         <button id="resetPanelBtn" type="button">Reset panel crop</button>
+      </div>
+      <div class="row">
         <button id="resetAllBtn" type="button">Reset cover</button>
       </div>
     </section>
@@ -97,7 +111,7 @@
     <div class="canvasWrap">
       <canvas id="cover" width="1920" height="1080" aria-label="Live preview of the cover"></canvas>
     </div>
-    <p class="previewHint">Live preview — drag any panel to crop, scroll to zoom. What you see is what the PNG looks like.</p>
+    <p class="previewHint">Live preview — drag any panel to crop, scroll to zoom, Alt-click to set the focus point. What you see is what the PNG looks like.</p>
   </section>
 </main>
 
